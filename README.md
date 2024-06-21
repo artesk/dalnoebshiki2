@@ -1,6 +1,6 @@
 # dalnoebshiki2
 Расширение под chrome, для олдскульного перемещения по google street view
-![image](https://github.com/artesk/dalnoebshiki2/assets/1773067/1a800483-936a-446a-bf70-b5bd7a5651c5)
+![overlay](https://github.com/artesk/dalnoebshiki2/assets/1773067/3cdf693b-2305-4db5-96cd-e996f227320f)
 
 
 *Шаги для тестирования расширения*:
