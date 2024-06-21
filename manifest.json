@@ -1,0 +1,33 @@
+{
+    "manifest_version": 3,
+    "name": "Truck Cabin Overlay",
+    "version": "1.0",
+    "description": "Overlay truck cabin in Google Maps Street View",
+    "permissions": [
+      "activeTab"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://www.google.com/maps/*"],
+        "js": ["content.js"],
+        "css": ["overlay.css"]
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "images/top-cabin.png",
+          "images/bottom-cabin.png"
+        ],
+        "matches": ["<all_urls>"]
+      }
+    ],
+    "icons": {
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  }
+  
