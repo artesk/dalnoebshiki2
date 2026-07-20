@@ -141,7 +141,8 @@
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__gear {
   --dalnoboyshiki2-digit-width: 20px;
   --dalnoboyshiki2-digit-height: 32px;
-  --dalnoboyshiki2-segment: 5px;
+  --dalnoboyshiki2-postal-stroke: 2.8;
+  --dalnoboyshiki2-dot-size: 5px;
   position: relative !important;
   z-index: 1 !important;
   display: flex !important;
@@ -161,93 +162,50 @@
   flex: 0 0 var(--dalnoboyshiki2-digit-width) !important;
   width: var(--dalnoboyshiki2-digit-width) !important;
   height: var(--dalnoboyshiki2-digit-height) !important;
-  transform: skewX(-4deg) !important;
+  transform: skewX(-5deg) !important;
 }
 
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment {
-  position: absolute !important;
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__glyph {
   display: block !important;
-  opacity: 0 !important;
-  background: var(--dalnoboyshiki2-ink) !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: visible !important;
+  color: var(--dalnoboyshiki2-ink) !important;
+  filter: drop-shadow(1px 0 0 var(--dalnoboyshiki2-ink)) !important;
+  shape-rendering: geometricPrecision !important;
 }
 
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--active {
-  opacity: 1 !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--a,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--d,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--g {
-  left: var(--dalnoboyshiki2-segment) !important;
-  width: calc(100% - (var(--dalnoboyshiki2-segment) * 2)) !important;
-  height: var(--dalnoboyshiki2-segment) !important;
-  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%) !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--a {
-  top: 0 !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--g {
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--d {
-  bottom: 0 !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--b,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--c,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--e,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--f {
-  width: var(--dalnoboyshiki2-segment) !important;
-  height: calc((100% - (var(--dalnoboyshiki2-segment) * 3)) / 2) !important;
-  clip-path: polygon(20% 0, 100% 10%, 80% 100%, 0 90%) !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--b,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--c {
-  right: 0 !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--e,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--f {
-  left: 0 !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--b,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--f {
-  top: calc(var(--dalnoboyshiki2-segment) / 2) !important;
-}
-
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--c,
-#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__segment--e {
-  bottom: calc(var(--dalnoboyshiki2-segment) / 2) !important;
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__glyph path {
+  fill: none !important;
+  stroke: currentcolor !important;
+  stroke-width: var(--dalnoboyshiki2-postal-stroke) !important;
+  stroke-linecap: square !important;
+  stroke-linejoin: miter !important;
 }
 
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__colon {
   display: flex !important;
-  flex: 0 0 calc(var(--dalnoboyshiki2-segment) * 1.3) !important;
+  flex: 0 0 calc(var(--dalnoboyshiki2-dot-size) * 1.3) !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: calc(var(--dalnoboyshiki2-segment) * 1.15) !important;
-  width: calc(var(--dalnoboyshiki2-segment) * 1.3) !important;
+  gap: calc(var(--dalnoboyshiki2-dot-size) * 1.15) !important;
+  width: calc(var(--dalnoboyshiki2-dot-size) * 1.3) !important;
   height: var(--dalnoboyshiki2-digit-height) !important;
 }
 
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__dot {
   display: block !important;
-  width: var(--dalnoboyshiki2-segment) !important;
-  height: var(--dalnoboyshiki2-segment) !important;
+  width: var(--dalnoboyshiki2-dot-size) !important;
+  height: var(--dalnoboyshiki2-dot-size) !important;
   background: var(--dalnoboyshiki2-ink) !important;
 }
 
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__time-value {
   --dalnoboyshiki2-digit-width: clamp(20px, 1.55vw, 26px);
   --dalnoboyshiki2-digit-height: clamp(31px, 2.35vw, 39px);
-  --dalnoboyshiki2-segment: clamp(5px, 0.36vw, 6px);
+  --dalnoboyshiki2-postal-stroke: 2.8;
+  --dalnoboyshiki2-dot-size: clamp(4px, 0.32vw, 5px);
   margin-top: clamp(1px, 0.15vw, 3px) !important;
 }
 
@@ -268,7 +226,7 @@
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__speed-value {
   --dalnoboyshiki2-digit-width: clamp(27px, 2.1vw, 35px);
   --dalnoboyshiki2-digit-height: clamp(43px, 3.25vw, 54px);
-  --dalnoboyshiki2-segment: clamp(6px, 0.45vw, 8px);
+  --dalnoboyshiki2-postal-stroke: 3;
 }
 
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__unit {
@@ -300,14 +258,14 @@
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__gear {
   --dalnoboyshiki2-digit-width: clamp(10px, 0.85vw, 14px);
   --dalnoboyshiki2-digit-height: clamp(16px, 1.25vw, 21px);
-  --dalnoboyshiki2-segment: clamp(2px, 0.18vw, 3px);
+  --dalnoboyshiki2-postal-stroke: 2.6;
   margin-left: clamp(7px, 0.6vw, 10px) !important;
 }
 
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__rpm-value {
   --dalnoboyshiki2-digit-width: clamp(17px, 1.22vw, 21px);
   --dalnoboyshiki2-digit-height: clamp(27px, 1.85vw, 32px);
-  --dalnoboyshiki2-segment: clamp(3px, 0.24vw, 4px);
+  --dalnoboyshiki2-postal-stroke: 2.8;
 }
 
 #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__factor {
@@ -409,6 +367,52 @@
   animation: dalnoboyshiki2-warning-pulse 850ms steps(2, end) infinite !important;
 }
 
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: clamp(3px, 0.28vw, 5px) !important;
+  padding-right: 3px !important;
+  padding-left: 3px !important;
+  text-align: center !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip-label,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip-distance,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip-moves {
+  display: block !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  color: var(--dalnoboyshiki2-ink) !important;
+  border: 0 !important;
+  background: transparent !important;
+  font-family: "Dalnoboyshiki Pixel", "Courier New", monospace !important;
+  font-weight: 400 !important;
+  line-height: 1.15 !important;
+  text-overflow: clip !important;
+  text-shadow: 1px 0 var(--dalnoboyshiki2-ink) !important;
+  white-space: nowrap !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip-label {
+  font-size: clamp(6px, 0.55vw, 9px) !important;
+  letter-spacing: -0.06em !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip-distance {
+  font-size: clamp(8px, 0.72vw, 12px) !important;
+  letter-spacing: -0.08em !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-hud__trip-moves {
+  font-size: clamp(5px, 0.43vw, 7px) !important;
+  letter-spacing: -0.1em !important;
+  opacity: 0.86 !important;
+}
+
 .dalnoboyshiki2-overlay__cabin {
   z-index: 1 !important;
   bottom: 0 !important;
@@ -418,9 +422,280 @@
   object-fit: fill !important;
 }
 
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music {
+  position: absolute !important;
+  z-index: 6 !important;
+  right: clamp(16px, 2.2vw, 42px) !important;
+  bottom: clamp(22px, 7vh, 76px) !important;
+  display: block !important;
+  width: clamp(208px, 15vw, 230px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #0b1009 !important;
+  font-family: "Dalnoboyshiki Pixel", "Courier New", monospace !important;
+  font-synthesis: none !important;
+  line-height: 1 !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music *,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music *::before,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music *::after {
+  box-sizing: border-box !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__toggle {
+  all: unset !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 7px minmax(0, 1fr) clamp(34px, 3vw, 44px) !important;
+  align-items: center !important;
+  gap: clamp(7px, 0.65vw, 11px) !important;
+  width: 100% !important;
+  height: clamp(50px, 4.4vw, 64px) !important;
+  padding: clamp(6px, 0.55vw, 9px) !important;
+  overflow: hidden !important;
+  border: clamp(2px, 0.2vw, 3px) solid #101513 !important;
+  border-radius: 4px !important;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 3%) 0 2px, rgb(0 0 0 / 3%) 2px 4px),
+    linear-gradient(180deg, #68736e 0 8%, #222925 9% 72%, #0b0f0d 73% 100%) !important;
+  box-shadow:
+    0 0 0 1px #89938e inset,
+    0 -2px 0 #050806 inset,
+    0 4px 9px rgb(0 0 0 / 72%) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__toggle:hover,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__toggle:focus-visible {
+  border-color: #9ba69f !important;
+  outline: 2px solid #111713 !important;
+  outline-offset: 2px !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__toggle:active {
+  transform: translateY(1px) !important;
+  box-shadow:
+    0 0 0 1px #727d77 inset,
+    0 2px 5px rgb(0 0 0 / 72%) !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__led {
+  display: block !important;
+  width: 7px !important;
+  height: 7px !important;
+  border: 1px solid #050805 !important;
+  border-radius: 50% !important;
+  background: #374232 !important;
+  box-shadow: 0 0 0 1px #778172 !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music[data-open="true"] .dalnoboyshiki2-music__led {
+  background: #b2d34a !important;
+  box-shadow:
+    0 0 0 1px #778172,
+    0 0 7px #a9c84c !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__screen {
+  display: flex !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 7px !important;
+  overflow: hidden !important;
+  border: 2px solid #080c08 !important;
+  border-radius: 2px !important;
+  background:
+    repeating-linear-gradient(0deg, rgb(5 10 4 / 5%) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #82956a, #60764f) !important;
+  box-shadow:
+    1px 2px 3px rgb(0 0 0 / 55%) inset,
+    0 0 0 1px #8f9a87 !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__station {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: #0b1009 !important;
+  text-overflow: clip !important;
+  text-shadow: 1px 0 #0b1009 !important;
+  white-space: nowrap !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__station {
+  font-family: "Arial Black", "Arial Narrow", Arial, sans-serif !important;
+  font-size: clamp(13px, 1.05vw, 16px) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.035em !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__cassette {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: 64% !important;
+  border: 2px solid #070a08 !important;
+  border-radius: 2px !important;
+  background: #45514b !important;
+  box-shadow:
+    0 0 0 1px #7d8882 inset,
+    1px 2px 2px rgb(0 0 0 / 65%) !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__cassette::before,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__cassette::after {
+  position: absolute !important;
+  top: 50% !important;
+  width: clamp(7px, 0.72vw, 11px) !important;
+  aspect-ratio: 1 !important;
+  border: 2px solid #090d0a !important;
+  border-radius: 50% !important;
+  background: #6c786f !important;
+  content: "" !important;
+  transform: translateY(-50%) !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__cassette::before {
+  left: 12% !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__cassette::after {
+  right: 12% !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__panel {
+  position: absolute !important;
+  z-index: 2 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: block !important;
+  width: min(380px, calc(100vw - 24px)) !important;
+  min-width: 200px !important;
+  padding: clamp(7px, 0.65vw, 10px) !important;
+  border: clamp(3px, 0.28vw, 4px) solid #0b0f0d !important;
+  border-radius: 5px !important;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 2%) 0 2px, rgb(0 0 0 / 3%) 2px 4px),
+    linear-gradient(180deg, #59645f, #1d2420 11%, #101512 100%) !important;
+  box-shadow:
+    0 0 0 1px #89948e inset,
+    0 0 0 3px rgb(0 0 0 / 42%),
+    0 10px 28px rgb(0 0 0 / 72%) !important;
+  animation: dalnoboyshiki2-music-open 150ms steps(3, end) both !important;
+  transform-origin: right bottom !important;
+  pointer-events: auto !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__panel[hidden] {
+  display: none !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__panel-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  min-height: 30px !important;
+  margin: 0 0 7px !important;
+  padding: 4px 5px 4px 8px !important;
+  border: 2px solid #080c08 !important;
+  border-radius: 2px !important;
+  background: linear-gradient(180deg, #82956a, #60764f) !important;
+  box-shadow: 1px 2px 3px rgb(0 0 0 / 52%) inset !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__panel-title {
+  display: block !important;
+  overflow: hidden !important;
+  color: #0b1009 !important;
+  font-size: clamp(8px, 0.72vw, 11px) !important;
+  letter-spacing: -0.08em !important;
+  text-overflow: clip !important;
+  text-shadow: 1px 0 #0b1009 !important;
+  white-space: nowrap !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__close {
+  all: unset !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  flex: 0 0 auto !important;
+  padding: 5px 7px !important;
+  color: #a9bd88 !important;
+  border: 2px solid #080b09 !important;
+  border-radius: 2px !important;
+  background: #2c3530 !important;
+  box-shadow: 0 1px 0 #78827c inset !important;
+  font: 400 clamp(6px, 0.52vw, 8px) / 1 "Dalnoboyshiki Pixel", monospace !important;
+  cursor: pointer !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__close:hover,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__close:focus-visible {
+  color: #d6e8ba !important;
+  border-color: #8e9a93 !important;
+  outline: none !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__frame {
+  display: block !important;
+  width: 100% !important;
+  min-width: 200px !important;
+  min-height: 200px !important;
+  aspect-ratio: 16 / 9 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 3px solid #030504 !important;
+  border-radius: 2px !important;
+  background: #030504 !important;
+  box-shadow: 0 0 0 1px #4f5954 !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__external {
+  all: unset !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  width: fit-content !important;
+  margin: 8px 2px 1px auto !important;
+  padding: 3px 2px !important;
+  color: #9faf91 !important;
+  font: 400 clamp(6px, 0.52vw, 8px) / 1.2 "Dalnoboyshiki Pixel", monospace !important;
+  letter-spacing: -0.06em !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  cursor: pointer !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__external:hover,
+#dalnoboyshiki2-overlay .dalnoboyshiki2-music__external:focus-visible {
+  color: #d6e8ba !important;
+  outline: 1px solid #8e9a93 !important;
+  outline-offset: 2px !important;
+}
+
 @keyframes dalnoboyshiki2-warning-pulse {
   50% {
     opacity: 0.2;
+  }
+}
+
+@keyframes dalnoboyshiki2-music-open {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -432,10 +707,21 @@
   #dalnoboyshiki2-overlay .dalnoboyshiki2-hud__blank {
     display: none !important;
   }
+
+  #dalnoboyshiki2-overlay .dalnoboyshiki2-music {
+    right: 12px !important;
+    bottom: 16px !important;
+    width: clamp(196px, 36vw, 220px) !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   #dalnoboyshiki2-overlay .dalnoboyshiki2-hud * {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  #dalnoboyshiki2-overlay .dalnoboyshiki2-music * {
     transition: none !important;
     animation: none !important;
   }
