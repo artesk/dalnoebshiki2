@@ -1,33 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "Truck Cabin Overlay",
-    "version": "1.0",
-    "description": "Overlay truck cabin in Google Maps Street View",
-    "permissions": [
-      "activeTab"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "content_scripts": [
-      {
-        "matches": ["https://www.google.com/maps/*"],
-        "js": ["content.js"],
-        "css": ["overlay.css"]
-      }
-    ],
-    "web_accessible_resources": [
-      {
-        "resources": [
-          "images/top-cabin.png",
-          "images/bottom-cabin.png"
-        ],
-        "matches": ["<all_urls>"]
-      }
-    ],
-    "icons": {
-      "48": "images/icon48.png",
-      "128": "images/icon128.png"
+  "manifest_version": 3,
+  "name": "Truck Cabin Overlay",
+  "version": "1.4.2",
+  "description": "Overlay truck cabin in Google Maps Street View",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.google.com/maps*",
+        "https://google.com/maps*",
+        "https://maps.google.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "images/bottom-cabin@2x.png",
+        "images/hud-engine-icon.png",
+        "images/hud-fuel-icon.png",
+        "fonts/PressStart2P-Regular.ttf"
+      ],
+      "matches": [
+        "https://www.google.com/*",
+        "https://google.com/*",
+        "https://maps.google.com/*"
+      ]
+    }
+  ],
+  "icons": {
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
   }
-  
+}
