@@ -202,10 +202,11 @@ test("mounts once on a direct Street View URL", async () => {
 
   assert.equal(overlayCount(harness), 1);
   const overlay = harness.document.getElementById("dalnoboyshiki2-overlay");
-  assert.equal(overlay.children.length, 3);
+  assert.equal(overlay.children.length, 4);
   assert.equal(overlay.children[0].tagName, "div");
   assert.equal(overlay.children[1].tagName, "img");
-  assert.equal(overlay.children[2].tagName, "section");
+  assert.equal(overlay.children[2].tagName, "aside");
+  assert.equal(overlay.children[3].tagName, "section");
 
   await harness.tick();
   assert.equal(overlayCount(harness), 1);
@@ -294,6 +295,33 @@ test("renders dynamic values as continuous postal-style SVG glyphs", () => {
   assert.equal(glyph.children.length, 1);
   assert.equal(glyph.children[0].tagName, "path");
   assert.equal(glyph.children[0].attributes.d, "M4 1H10L13 4V20L10 23H4L1 20V4Z");
+});
+
+test("shows one speeding ticket after crossing 100 km/h", async () => {
+  const harness = createHarness({
+    href: "https://www.google.com/maps/@59.9,30.3,3a,75y/data=!3m7!1e1!3m5!1stest",
+  });
+  const notice = harness.document.getElementById(
+    "dalnoboyshiki2-speeding-notice",
+  );
+
+  assert.equal(notice.hidden, true);
+
+  harness.dispatchHudUpdate({ speedKmh: 100 });
+  assert.equal(notice.hidden, true);
+
+  harness.dispatchHudUpdate({ speedKmh: 101 });
+  assert.equal(notice.hidden, false);
+
+  await harness.tick(5_000);
+  assert.equal(notice.hidden, true);
+
+  harness.dispatchHudUpdate({ speedKmh: 110 });
+  assert.equal(notice.hidden, true);
+
+  harness.dispatchHudUpdate({ speedKmh: 95 });
+  harness.dispatchHudUpdate({ speedKmh: 101 });
+  assert.equal(notice.hidden, false);
 });
 
 test("loads the YouTube playlist only after opening and stops it on close", () => {
