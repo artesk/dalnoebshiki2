@@ -422,6 +422,37 @@
   object-fit: fill !important;
 }
 
+#dalnoboyshiki2-overlay .dalnoboyshiki2-speeding-notice {
+  position: absolute !important;
+  z-index: 7 !important;
+  top: clamp(82px, 10vh, 130px) !important;
+  right: clamp(24px, 7vw, 100px) !important;
+  display: block !important;
+  width: clamp(190px, 19vw, 260px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  filter: drop-shadow(0 8px 13px rgb(0 0 0 / 72%)) !important;
+  animation: dalnoboyshiki2-speeding-notice-in 220ms steps(4, end) both !important;
+  pointer-events: none !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-speeding-notice[hidden] {
+  display: none !important;
+}
+
+#dalnoboyshiki2-overlay .dalnoboyshiki2-speeding-notice__image {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  image-rendering: auto !important;
+}
+
 #dalnoboyshiki2-overlay .dalnoboyshiki2-music {
   position: absolute !important;
   z-index: 6 !important;
@@ -699,6 +730,18 @@
   }
 }
 
+@keyframes dalnoboyshiki2-speeding-notice-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
 @media (max-width: 900px) {
   #dalnoboyshiki2-overlay .dalnoboyshiki2-hud {
     grid-template-columns: minmax(0, 33fr) minmax(0, 39fr) minmax(0, 28fr) !important;
@@ -713,6 +756,12 @@
     bottom: 16px !important;
     width: clamp(196px, 36vw, 220px) !important;
   }
+
+  #dalnoboyshiki2-overlay .dalnoboyshiki2-speeding-notice {
+    top: 76px !important;
+    right: 12px !important;
+    width: clamp(145px, 28vw, 190px) !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -723,6 +772,10 @@
 
   #dalnoboyshiki2-overlay .dalnoboyshiki2-music * {
     transition: none !important;
+    animation: none !important;
+  }
+
+  #dalnoboyshiki2-overlay .dalnoboyshiki2-speeding-notice {
     animation: none !important;
   }
 }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Truck Cabin Overlay",
-  "version": "1.4.2",
+  "version": "1.5.0",
   "description": "Overlay truck cabin in Google Maps Street View",
   "content_scripts": [
     {
@@ -21,6 +21,7 @@
         "images/bottom-cabin@2x.png",
         "images/hud-engine-icon.png",
         "images/hud-fuel-icon.png",
+        "images/speeding-ticket.png",
         "fonts/PressStart2P-Regular.ttf"
       ],
       "matches": [

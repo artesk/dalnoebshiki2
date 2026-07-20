@@ -9,6 +9,9 @@
   const MAX_TRACKED_STEP_METERS = 500;
   const MAX_TRACKED_SPEED_KMH = 180;
   const SPEED_IDLE_TIMEOUT_MS = 2_000;
+  const SPEEDING_LIMIT_KMH = 100;
+  const SPEEDING_REARM_KMH = 95;
+  const SPEEDING_NOTICE_DURATION_MS = 5_000;
   const MUSIC_PLAYLIST_URL =
     "https://www.youtube.com/watch?v=x2vnaAdm-Rg&list=PL50DEA6B792AFF6BE";
   const MUSIC_EMBED_URL =
@@ -47,6 +50,11 @@
     lastMovementAt: null,
     distanceMeters: 0,
     movementCount: 0,
+  };
+
+  const speedingNoticeState = {
+    armed: true,
+    visibleUntil: 0,
   };
 
   const hudState = {
@@ -211,6 +219,8 @@
     hudState.speedKmh = 0;
     hudState.distanceMeters = 0;
     hudState.movementCount = 0;
+    speedingNoticeState.armed = true;
+    speedingNoticeState.visibleUntil = 0;
   }
 
   function stopTelemetrySession() {
@@ -218,6 +228,8 @@
     telemetryState.lastCoordinate = null;
     telemetryState.lastCoordinateAt = null;
     telemetryState.lastMovementAt = null;
+    speedingNoticeState.armed = true;
+    speedingNoticeState.visibleUntil = 0;
   }
 
   function updateTelemetry(now = Date.now()) {
@@ -572,6 +584,46 @@
     return music;
   }
 
+  function createSpeedingNotice() {
+    const notice = createElement("aside", "dalnoboyshiki2-speeding-notice");
+    notice.id = "dalnoboyshiki2-speeding-notice";
+    notice.hidden = true;
+    notice.setAttribute("role", "alert");
+    notice.setAttribute(
+      "aria-label",
+      "Превышение скорости зафиксировано камерой слежения. Штраф 250.",
+    );
+
+    const image = createImage(
+      "dalnoboyshiki2-speeding-notice__image",
+      "images/speeding-ticket.png",
+    );
+    image.alt = "";
+    notice.appendChild(image);
+    return notice;
+  }
+
+  function applySpeedingNotice(now = Date.now()) {
+    const notice = document.getElementById("dalnoboyshiki2-speeding-notice");
+    if (!notice) {
+      return;
+    }
+
+    if (hudState.speedKmh <= SPEEDING_REARM_KMH) {
+      speedingNoticeState.armed = true;
+    }
+
+    if (
+      speedingNoticeState.armed &&
+      hudState.speedKmh > SPEEDING_LIMIT_KMH
+    ) {
+      speedingNoticeState.armed = false;
+      speedingNoticeState.visibleUntil = now + SPEEDING_NOTICE_DURATION_MS;
+    }
+
+    notice.hidden = now >= speedingNoticeState.visibleUntil;
+  }
+
   function clampNumber(value, minimum, maximum, fallback) {
     const number = Number(value);
     return Number.isFinite(number)
@@ -606,6 +658,8 @@
     if (moves) {
       moves.textContent = `ХОДЫ ${hudState.movementCount}`;
     }
+
+    applySpeedingNotice();
   }
 
   function updateHud(patch) {
@@ -654,6 +708,7 @@
         "images/bottom-cabin@2x.png",
       ),
     );
+    overlay.appendChild(createSpeedingNotice());
     overlay.appendChild(createMusicPlayer());
 
     return overlay;
