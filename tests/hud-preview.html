@@ -17,9 +17,102 @@
       body {
         background: #8cb5d9;
       }
+
+      .preview-minimap-origin {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 0;
+      }
+
+      .preview-minimap-host {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 0;
+      }
+
+      .preview-minimap {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 218px;
+        height: 100px;
+        padding: 2px;
+        overflow: hidden;
+        background: #fff;
+        border: 2px solid #111;
+        border-radius: 9px;
+        box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+        transition: height 0.4s;
+      }
+
+      .preview-minimap-host:hover .preview-minimap,
+      .preview-minimap-host--expanded .preview-minimap {
+        height: 218px;
+      }
+
+      .preview-minimap__surface {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background:
+          linear-gradient(168deg, transparent 0 38%, #11bbca 39% 42%, transparent 43%),
+          linear-gradient(12deg, transparent 0 47%, #d6d6d6 48% 50%, transparent 51%),
+          repeating-linear-gradient(76deg, #f6f3e8 0 9px, #ece8dc 10px 11px);
+      }
+
+      .preview-minimap__surface::before {
+        content: "";
+        position: absolute;
+        top: 27px;
+        left: 101px;
+        width: 14px;
+        height: 36px;
+        background: #ffae24;
+        border: 2px solid #9b6412;
+        border-radius: 50% 50% 45% 45%;
+        clip-path: polygon(18% 0, 82% 0, 82% 60%, 100% 100%, 50% 80%, 0 100%, 18% 60%);
+      }
+
+      .preview-minimap__surface::after {
+        content: "+";
+        position: absolute;
+        bottom: 4px;
+        left: 4px;
+        display: grid;
+        width: 25px;
+        height: 25px;
+        place-items: center;
+        color: #5f6368;
+        background: white;
+        border-radius: 4px;
+        font: 700 18px/1 Arial, sans-serif;
+        box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+      }
     </style>
   </head>
   <body>
+    <div
+      role="navigation"
+      style="position:absolute;top:72px;left:20px;width:376px;height:139px"
+    >
+      <h1>Dobronivská cesta</h1>
+      <h2>Зволен, Банскобистрицкий край</h2>
+    </div>
+    <div class="preview-minimap-origin" role="application">
+      <div class="preview-minimap-host">
+        <div class="preview-minimap">
+          <div
+            class="preview-minimap__surface"
+            aria-label="Интерактивная карта"
+          ></div>
+        </div>
+      </div>
+    </div>
     <div class="widget-scene"></div>
     <script>
       window.chrome = window.chrome || {};
@@ -29,6 +122,28 @@
         },
       };
     </script>
+    <script src="../trucks.config.js"></script>
     <script src="../content.js"></script>
+    <script>
+      const previewParams = new URLSearchParams(window.location.search);
+      const previewFuel = previewParams.has("fuel")
+        ? Number(previewParams.get("fuel"))
+        : Number.NaN;
+      if (Number.isFinite(previewFuel)) {
+        window.dispatchEvent(
+          new CustomEvent("dalnoboyshiki2:hud-update", {
+            detail: { fuelPercent: previewFuel },
+          }),
+        );
+      }
+
+      document
+        .querySelector(".preview-minimap__surface")
+        ?.addEventListener("click", () => {
+          document
+            .querySelector(".preview-minimap-host")
+            ?.classList.toggle("preview-minimap-host--expanded");
+        });
+    </script>
   </body>
 </html>

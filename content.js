@@ -2,6 +2,14 @@
   const OVERLAY_ID = "dalnoboyshiki2-overlay";
   const HUD_ID = "dalnoboyshiki2-hud";
   const MUSIC_ID = "dalnoboyshiki2-music";
+  const GARAGE_ID = "dalnoboyshiki2-garage";
+  const PAGER_ID = "dalnoboyshiki2-pager";
+  const MINIMAP_SLOT_ID = "dalnoboyshiki2-minimap-slot";
+  const GOOGLE_INFO_CARD_MARKER =
+    "data-dalnoboyshiki2-hidden-streetview-card";
+  const GOOGLE_MINIMAP_MARKER = "data-dalnoboyshiki2-google-minimap";
+  const TRUCK_STORAGE_KEY = "dalnoboyshiki2-selected-truck";
+  const FUEL_STORAGE_KEY = "dalnoboyshiki2-fuel-by-truck";
   const HUD_UPDATE_EVENT = "dalnoboyshiki2:hud-update";
   const LOCATION_CHECK_INTERVAL_MS = 500;
   const EARTH_RADIUS_METERS = 6_371_000;
@@ -16,6 +24,37 @@
     "https://www.youtube.com/watch?v=x2vnaAdm-Rg&list=PL50DEA6B792AFF6BE";
   const MUSIC_EMBED_URL =
     "https://www.youtube.com/embed/x2vnaAdm-Rg?list=PL50DEA6B792AFF6BE&playsinline=1&loop=1";
+
+  const fallbackTruck = Object.freeze({
+    id: "classic",
+    name: "Классическая кабина",
+    shortName: "КЛАССИКА",
+    cabinImage: "images/bottom-cabin@2x.png",
+    fuelTankCapacityLiters: 500,
+    fuelConsumptionLitersPer100Km: 32,
+  });
+  const rawTruckConfig = globalThis.DALNOBOYSHIKI2_TRUCK_CONFIG;
+  const configuredTrucks = Array.isArray(rawTruckConfig?.trucks)
+    ? rawTruckConfig.trucks.filter((truck) => {
+        return (
+          truck &&
+          /^[a-z0-9-]+$/i.test(truck.id) &&
+          typeof truck.name === "string" &&
+          typeof truck.shortName === "string" &&
+          typeof truck.cabinImage === "string" &&
+          Number.isFinite(truck.fuelTankCapacityLiters) &&
+          truck.fuelTankCapacityLiters > 0 &&
+          Number.isFinite(truck.fuelConsumptionLitersPer100Km) &&
+          truck.fuelConsumptionLitersPer100Km > 0
+        );
+      })
+    : [];
+  const trucks = configuredTrucks.length > 0
+    ? configuredTrucks
+    : [fallbackTruck];
+  const configuredDefaultTruck = trucks.find(
+    (truck) => truck.id === rawTruckConfig?.defaultTruckId,
+  );
 
   const STREET_VIEW_SCENE_SELECTORS = [
     ".widget-scene",
@@ -42,6 +81,10 @@
 
   let lastLocation = window.location.href;
   let syncTimer = null;
+  let hiddenGoogleInfoCard = null;
+  let mountedGoogleMinimap = null;
+  let selectedTruck = configuredDefaultTruck || trucks[0];
+  const fuelLitersByTruck = {};
 
   const telemetryState = {
     startedAt: null,
@@ -62,7 +105,7 @@
     speedKmh: 22,
     gear: "2",
     rpm: 2200,
-    fuelPercent: 30,
+    fuelPercent: 100,
     engineWarning: false,
     distanceMeters: 0,
     movementCount: 0,
@@ -146,6 +189,215 @@
     }
 
     return parent;
+  }
+
+  function formatFuelConsumption(value) {
+    const rounded = Number.isInteger(value) ? String(value) : value.toFixed(1);
+    return rounded.replace(".", ",");
+  }
+
+  function getTruckFuelLiters(truck = selectedTruck) {
+    const storedValue = fuelLitersByTruck[truck.id];
+    if (!Number.isFinite(storedValue)) {
+      return truck.fuelTankCapacityLiters;
+    }
+
+    return Math.min(
+      truck.fuelTankCapacityLiters,
+      Math.max(0, storedValue),
+    );
+  }
+
+  function persistFuelState() {
+    const storage = globalThis.chrome?.storage?.local;
+    if (!storage?.set) {
+      return;
+    }
+
+    try {
+      const operation = storage.set({
+        [FUEL_STORAGE_KEY]: { ...fuelLitersByTruck },
+      });
+      operation?.catch?.(() => {});
+    } catch {
+      // Fuel consumption still works for the current page session.
+    }
+  }
+
+  function setSelectedTruckFuelLiters(value, shouldPersist = false) {
+    const fuelLiters = Math.min(
+      selectedTruck.fuelTankCapacityLiters,
+      Math.max(0, Number(value) || 0),
+    );
+    fuelLitersByTruck[selectedTruck.id] = fuelLiters;
+    hudState.fuelPercent =
+      (fuelLiters / selectedTruck.fuelTankCapacityLiters) * 100;
+
+    const overlay = document.getElementById(OVERLAY_ID);
+    overlay?.setAttribute(
+      "data-fuel-remaining-liters",
+      fuelLiters.toFixed(3),
+    );
+
+    const refuel = document.getElementById("dalnoboyshiki2-refuel");
+    refuel?.setAttribute(
+      "title",
+      `Заправить ${selectedTruck.name}. Сейчас ${formatFuelConsumption(
+        fuelLiters,
+      )} из ${formatFuelConsumption(
+        selectedTruck.fuelTankCapacityLiters,
+      )} л`,
+    );
+    refuel?.setAttribute(
+      "data-full",
+      String(fuelLiters >= selectedTruck.fuelTankCapacityLiters),
+    );
+
+    if (shouldPersist) {
+      persistFuelState();
+    }
+    return fuelLiters;
+  }
+
+  function consumeFuelForDistance(distanceMeters) {
+    const consumedLiters =
+      (distanceMeters / 1_000) *
+      (selectedTruck.fuelConsumptionLitersPer100Km / 100);
+    if (consumedLiters <= 0) {
+      return;
+    }
+
+    setSelectedTruckFuelLiters(
+      getTruckFuelLiters() - consumedLiters,
+      true,
+    );
+  }
+
+  function refuelSelectedTruck() {
+    setSelectedTruckFuelLiters(
+      selectedTruck.fuelTankCapacityLiters,
+      true,
+    );
+    applyHudState();
+  }
+
+  function getTruckOptionId(truckId) {
+    return `dalnoboyshiki2-truck-${truckId}`;
+  }
+
+  function applySelectedTruck() {
+    setSelectedTruckFuelLiters(getTruckFuelLiters());
+    const overlay = document.getElementById(OVERLAY_ID);
+    const cabin = document.getElementById("dalnoboyshiki2-cabin");
+    const currentName = document.getElementById(
+      "dalnoboyshiki2-garage-current",
+    );
+    const consumption = document.getElementById(
+      "dalnoboyshiki2-garage-consumption",
+    );
+
+    if (overlay) {
+      overlay.setAttribute("data-truck-id", selectedTruck.id);
+      overlay.setAttribute(
+        "data-fuel-consumption-l-per-100-km",
+        String(selectedTruck.fuelConsumptionLitersPer100Km),
+      );
+      overlay.setAttribute(
+        "data-fuel-tank-capacity-liters",
+        String(selectedTruck.fuelTankCapacityLiters),
+      );
+    }
+    if (cabin) {
+      cabin.src = chrome.runtime.getURL(selectedTruck.cabinImage);
+      cabin.setAttribute("data-truck-id", selectedTruck.id);
+    }
+    if (currentName) {
+      currentName.textContent = selectedTruck.shortName;
+    }
+    if (consumption) {
+      consumption.textContent = `БАК ${formatFuelConsumption(
+        selectedTruck.fuelTankCapacityLiters,
+      )} Л · ${formatFuelConsumption(
+        selectedTruck.fuelConsumptionLitersPer100Km,
+      )} Л/100`;
+    }
+
+    for (const truck of trucks) {
+      const option = document.getElementById(getTruckOptionId(truck.id));
+      const isSelected = truck.id === selectedTruck.id;
+      option?.setAttribute("aria-pressed", String(isSelected));
+      option?.setAttribute("data-selected", String(isSelected));
+    }
+
+    const toggle = document.getElementById("dalnoboyshiki2-garage-toggle");
+    toggle?.setAttribute(
+      "title",
+      `${selectedTruck.name}. Бак ${formatFuelConsumption(
+        selectedTruck.fuelTankCapacityLiters,
+      )} л. Расход ${formatFuelConsumption(
+        selectedTruck.fuelConsumptionLitersPer100Km,
+      )} л/100 км`,
+    );
+    applyHudState();
+  }
+
+  function persistSelectedTruck() {
+    const storage = globalThis.chrome?.storage?.local;
+    if (!storage?.set) {
+      return;
+    }
+
+    try {
+      const operation = storage.set({
+        [TRUCK_STORAGE_KEY]: selectedTruck.id,
+      });
+      operation?.catch?.(() => {});
+    } catch {
+      // The selected truck still works for the current page session.
+    }
+  }
+
+  function selectTruck(truckId, shouldPersist = true) {
+    const truck = trucks.find((candidate) => candidate.id === truckId);
+    if (!truck) {
+      return false;
+    }
+
+    selectedTruck = truck;
+    applySelectedTruck();
+    if (shouldPersist) {
+      persistSelectedTruck();
+    }
+    return true;
+  }
+
+  function restoreSelectedTruck() {
+    const storage = globalThis.chrome?.storage?.local;
+    if (!storage?.get) {
+      return;
+    }
+
+    try {
+      Promise.resolve(storage.get([TRUCK_STORAGE_KEY, FUEL_STORAGE_KEY]))
+        .then((values) => {
+          const storedFuel = values?.[FUEL_STORAGE_KEY];
+          if (storedFuel && typeof storedFuel === "object") {
+            for (const truck of trucks) {
+              const fuelLiters = Number(storedFuel[truck.id]);
+              if (Number.isFinite(fuelLiters)) {
+                fuelLitersByTruck[truck.id] = fuelLiters;
+              }
+            }
+          }
+
+          if (!selectTruck(values?.[TRUCK_STORAGE_KEY], false)) {
+            applySelectedTruck();
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // Keep the configured default when storage is unavailable.
+    }
   }
 
   function readStreetViewCoordinate(href) {
@@ -266,6 +518,7 @@
           telemetryState.distanceMeters += stepDistance;
           telemetryState.movementCount += 1;
           telemetryState.lastMovementAt = now;
+          consumeFuelForDistance(stepDistance);
 
           const instantaneousSpeed = Math.min(
             MAX_TRACKED_SPEED_KMH,
@@ -436,10 +689,15 @@
       "images/hud-engine-icon.png",
     );
 
-    const leftBars = createElement("span", "dalnoboyshiki2-hud__bars");
+    const leftBars = createElement(
+      "span",
+      "dalnoboyshiki2-hud__bars dalnoboyshiki2-hud__fuel-bars",
+    );
     const rightBars = createElement("span", "dalnoboyshiki2-hud__bars");
     for (let index = 0; index < 5; index += 1) {
-      leftBars.appendChild(createElement("i", "dalnoboyshiki2-hud__bar"));
+      const fuelBar = createElement("i", "dalnoboyshiki2-hud__bar");
+      fuelBar.id = `dalnoboyshiki2-fuel-bar-${index + 1}`;
+      leftBars.appendChild(fuelBar);
       rightBars.appendChild(createElement("i", "dalnoboyshiki2-hud__bar"));
     }
     appendChildren(statusCell, fuelGauge, pump, leftBars, engine, rightBars);
@@ -472,6 +730,162 @@
     hud.setAttribute("data-fuel-warning", String(hudState.fuelPercent <= 15));
     hud.setAttribute("data-engine-warning", String(hudState.engineWarning));
     return hud;
+  }
+
+  function createRefuelButton() {
+    const button = createElement(
+      "button",
+      "dalnoboyshiki2-refuel",
+      "ЗАПРАВИТЬСЯ",
+    );
+    button.id = "dalnoboyshiki2-refuel";
+    button.setAttribute("type", "button");
+    button.setAttribute("aria-label", "Заправить бак до ста процентов");
+    button.setAttribute("data-full", "true");
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      refuelSelectedTruck();
+    });
+    for (const eventName of ["pointerdown", "dblclick", "wheel"]) {
+      button.addEventListener(eventName, (event) => event.stopPropagation());
+    }
+    return button;
+  }
+
+  function createGarage() {
+    const garage = createElement("section", "dalnoboyshiki2-garage");
+    garage.id = GARAGE_ID;
+    garage.setAttribute("data-open", "false");
+    garage.setAttribute("aria-label", "Выбор кабины грузовика");
+
+    const toggle = createElement(
+      "button",
+      "dalnoboyshiki2-garage__toggle",
+    );
+    toggle.id = "dalnoboyshiki2-garage-toggle";
+    toggle.setAttribute("type", "button");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-controls", "dalnoboyshiki2-garage-panel");
+
+    const screen = createElement("span", "dalnoboyshiki2-garage__screen");
+    const currentName = createElement(
+      "span",
+      "dalnoboyshiki2-garage__current",
+      selectedTruck.shortName,
+    );
+    currentName.id = "dalnoboyshiki2-garage-current";
+    const consumption = createElement(
+      "span",
+      "dalnoboyshiki2-garage__consumption",
+      `БАК ${formatFuelConsumption(
+        selectedTruck.fuelTankCapacityLiters,
+      )} Л · ${formatFuelConsumption(
+        selectedTruck.fuelConsumptionLitersPer100Km,
+      )} Л/100`,
+    );
+    consumption.id = "dalnoboyshiki2-garage-consumption";
+    appendChildren(
+      screen,
+      createElement("span", "dalnoboyshiki2-garage__label", "ГАРАЖ"),
+      currentName,
+      consumption,
+    );
+    appendChildren(
+      toggle,
+      createElement("span", "dalnoboyshiki2-garage__led"),
+      screen,
+    );
+
+    const panel = createElement("div", "dalnoboyshiki2-garage__panel");
+    panel.id = "dalnoboyshiki2-garage-panel";
+    panel.hidden = true;
+
+    const panelHeader = createElement(
+      "div",
+      "dalnoboyshiki2-garage__panel-header",
+    );
+    const close = createElement(
+      "button",
+      "dalnoboyshiki2-garage__close",
+      "ЗАКР",
+    );
+    close.id = "dalnoboyshiki2-garage-close";
+    close.setAttribute("type", "button");
+    close.setAttribute("aria-label", "Закрыть выбор кабины");
+    appendChildren(
+      panelHeader,
+      createElement(
+        "span",
+        "dalnoboyshiki2-garage__panel-title",
+        "ВЫБОР МАШИНЫ",
+      ),
+      close,
+    );
+
+    const list = createElement("div", "dalnoboyshiki2-garage__list");
+    for (const truck of trucks) {
+      const option = createElement(
+        "button",
+        "dalnoboyshiki2-garage__option",
+      );
+      option.id = getTruckOptionId(truck.id);
+      option.setAttribute("type", "button");
+      option.setAttribute("aria-pressed", String(truck.id === selectedTruck.id));
+      option.setAttribute("data-selected", String(truck.id === selectedTruck.id));
+      appendChildren(
+        option,
+        createElement(
+          "span",
+          "dalnoboyshiki2-garage__option-name",
+          truck.name,
+        ),
+        createElement(
+          "span",
+          "dalnoboyshiki2-garage__option-consumption",
+          `БАК ${formatFuelConsumption(
+            truck.fuelTankCapacityLiters,
+          )} Л · РАСХОД ${formatFuelConsumption(
+            truck.fuelConsumptionLitersPer100Km,
+          )} Л/100 КМ`,
+        ),
+      );
+      option.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectTruck(truck.id);
+        setOpen(false);
+        toggle.focus();
+      });
+      list.appendChild(option);
+    }
+    appendChildren(panel, panelHeader, list);
+    appendChildren(garage, toggle, panel);
+
+    function setOpen(isOpen) {
+      garage.setAttribute("data-open", String(isOpen));
+      toggle.setAttribute("aria-expanded", String(isOpen));
+      panel.hidden = !isOpen;
+    }
+
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setOpen(garage.getAttribute("data-open") !== "true");
+    });
+    close.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setOpen(false);
+      toggle.focus();
+    });
+    panel.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    for (const eventName of ["pointerdown", "click", "dblclick", "wheel"]) {
+      garage.addEventListener(eventName, (event) => event.stopPropagation());
+    }
+
+    return garage;
   }
 
   function createMusicPlayer() {
@@ -603,6 +1017,224 @@
     return notice;
   }
 
+  function createPager() {
+    const pager = createElement("section", "dalnoboyshiki2-pager");
+    pager.id = PAGER_ID;
+    pager.hidden = true;
+    pager.setAttribute("aria-live", "polite");
+    pager.setAttribute("aria-label", "Текущее местоположение");
+
+    const screen = createElement("div", "dalnoboyshiki2-pager__screen");
+    const message = createElement(
+      "output",
+      "dalnoboyshiki2-pager__message",
+    );
+    message.id = "dalnoboyshiki2-pager-message";
+    appendChildren(
+      screen,
+      createElement("span", "dalnoboyshiki2-pager__label", "МАРШРУТ:"),
+      message,
+    );
+    appendChildren(
+      pager,
+      createElement("i", "dalnoboyshiki2-pager__signal"),
+      screen,
+    );
+    return pager;
+  }
+
+  function createMinimapSlot() {
+    const slot = createElement("div", "dalnoboyshiki2-minimap-slot");
+    slot.id = MINIMAP_SLOT_ID;
+    slot.hidden = true;
+    return slot;
+  }
+
+  function getGoogleStreetViewInfoCard() {
+    if (hiddenGoogleInfoCard?.parentNode) {
+      return hiddenGoogleInfoCard;
+    }
+
+    hiddenGoogleInfoCard = null;
+    const overlay = document.getElementById(OVERLAY_ID);
+    const candidates = document.querySelectorAll(
+      '[role="navigation"], .widget-titlecard',
+    );
+
+    for (const candidate of candidates) {
+      if (overlay?.contains(candidate)) {
+        continue;
+      }
+
+      const title = candidate.querySelector(
+        'h1, [role="heading"][aria-level="1"]',
+      );
+      const subtitles = candidate.querySelectorAll(
+        'h2, [role="heading"][aria-level="2"]',
+      );
+      const rect = candidate.getBoundingClientRect();
+      const isStreetViewCard =
+        title?.textContent?.trim() &&
+        subtitles.length > 0 &&
+        rect.width >= 180 &&
+        rect.width <= 600 &&
+        rect.height >= 70 &&
+        rect.height <= 300 &&
+        rect.left < 600 &&
+        rect.top < 320;
+
+      if (isStreetViewCard) {
+        hiddenGoogleInfoCard = candidate;
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  function syncGoogleStreetViewInfoCard() {
+    const pager = document.getElementById(PAGER_ID);
+    if (!pager) {
+      return;
+    }
+
+    const card = getGoogleStreetViewInfoCard();
+    if (!card) {
+      pager.hidden = true;
+      return;
+    }
+
+    const title = card
+      .querySelector('h1, [role="heading"][aria-level="1"]')
+      ?.textContent?.trim();
+    const subtitle = Array.from(
+      card.querySelectorAll('h2, [role="heading"][aria-level="2"]'),
+    )
+      .map((element) => element.textContent?.trim())
+      .find((text) => text && !/^Google\b/i.test(text));
+    const messageText = [title, subtitle].filter(Boolean).join(" — ");
+    const message = document.getElementById("dalnoboyshiki2-pager-message");
+
+    if (!messageText || !message) {
+      pager.hidden = true;
+      return;
+    }
+
+    card.setAttribute(GOOGLE_INFO_CARD_MARKER, "true");
+    if (message.textContent !== messageText) {
+      message.textContent = messageText;
+      pager.setAttribute("title", messageText);
+    }
+    pager.hidden = false;
+  }
+
+  function restoreGoogleStreetViewInfoCard() {
+    hiddenGoogleInfoCard?.removeAttribute(GOOGLE_INFO_CARD_MARKER);
+    hiddenGoogleInfoCard = null;
+  }
+
+  function getGoogleStreetViewMinimap() {
+    if (
+      mountedGoogleMinimap?.element?.parentNode?.id === MINIMAP_SLOT_ID
+    ) {
+      return mountedGoogleMinimap.element;
+    }
+
+    const overlay = document.getElementById(OVERLAY_ID);
+    const labeledCandidates = document.querySelectorAll(
+      '[aria-label="Интерактивная карта"], [aria-label="Interactive map"]',
+    );
+    const fallbackCandidates = document.querySelectorAll(
+      '[role="application"] [aria-label]',
+    );
+    const candidates = [...labeledCandidates, ...fallbackCandidates];
+    const viewportHeight = window.innerHeight || 900;
+
+    for (const candidate of candidates) {
+      if (overlay?.contains(candidate)) {
+        continue;
+      }
+
+      const rect = candidate.getBoundingClientRect();
+      const label = candidate.getAttribute("aria-label") || "";
+      const hasKnownLabel = /^(Интерактивная карта|Interactive map)$/i.test(
+        label,
+      );
+      const hasMapContent = Boolean(
+        candidate.querySelector('img[role="presentation"], canvas'),
+      );
+      const isBottomLeftMap =
+        rect.width >= 120 &&
+        rect.width <= 500 &&
+        rect.height >= 70 &&
+        rect.height <= 300 &&
+        rect.left < 100 &&
+        rect.top > viewportHeight * 0.4;
+
+      if ((hasKnownLabel || hasMapContent) && isBottomLeftMap) {
+        const minimapContainer = candidate.parentElement || candidate;
+        const interactionHost = minimapContainer.parentElement;
+        const hostRect = interactionHost?.getBoundingClientRect();
+        const isDedicatedInteractionHost =
+          interactionHost &&
+          interactionHost !== document.body &&
+          hostRect.width >= rect.width &&
+          hostRect.height <= 10;
+
+        return isDedicatedInteractionHost
+          ? interactionHost
+          : minimapContainer;
+      }
+    }
+
+    return null;
+  }
+
+  function syncGoogleStreetViewMinimap() {
+    const slot = document.getElementById(MINIMAP_SLOT_ID);
+    if (!slot) {
+      return;
+    }
+
+    if (mountedGoogleMinimap?.element?.parentNode === slot) {
+      slot.hidden = false;
+      return;
+    }
+
+    const minimap = getGoogleStreetViewMinimap();
+    if (!minimap || !minimap.parentNode) {
+      slot.hidden = true;
+      return;
+    }
+
+    mountedGoogleMinimap = {
+      element: minimap,
+      originalParent: minimap.parentNode,
+      originalNextSibling: minimap.nextSibling,
+    };
+    minimap.setAttribute(GOOGLE_MINIMAP_MARKER, "true");
+    slot.appendChild(minimap);
+    slot.hidden = false;
+  }
+
+  function restoreGoogleStreetViewMinimap() {
+    if (!mountedGoogleMinimap) {
+      return;
+    }
+
+    const { element, originalParent, originalNextSibling } =
+      mountedGoogleMinimap;
+    element.removeAttribute(GOOGLE_MINIMAP_MARKER);
+    if (originalParent?.parentNode) {
+      const referenceNode =
+        originalNextSibling?.parentNode === originalParent
+          ? originalNextSibling
+          : null;
+      originalParent.insertBefore(element, referenceNode);
+    }
+    mountedGoogleMinimap = null;
+  }
+
   function applySpeedingNotice(now = Date.now()) {
     const notice = document.getElementById("dalnoboyshiki2-speeding-notice");
     if (!notice) {
@@ -647,7 +1279,19 @@
       Math.round(hudState.rpm / 100),
     );
     hud.style.setProperty("--dalnoboyshiki2-fuel-level", `${hudState.fuelPercent}%`);
-    hud.setAttribute("data-fuel-warning", String(hudState.fuelPercent <= 15));
+    const activeFuelBars =
+      hudState.fuelPercent > 0 ? Math.ceil(hudState.fuelPercent / 20) : 0;
+    for (let index = 0; index < 5; index += 1) {
+      const bar = document.getElementById(`dalnoboyshiki2-fuel-bar-${index + 1}`);
+      const isActive = index >= 5 - activeFuelBars;
+      const isLastRemaining = activeFuelBars === 1 && index === 4;
+      bar?.setAttribute("data-active", String(isActive));
+      bar?.setAttribute("data-low", String(isLastRemaining));
+    }
+    hud.setAttribute(
+      "data-fuel-warning",
+      String(hudState.fuelPercent > 0 && hudState.fuelPercent <= 20),
+    );
     hud.setAttribute("data-engine-warning", String(hudState.engineWarning));
 
     const distance = document.getElementById("dalnoboyshiki2-hud-distance");
@@ -700,15 +1344,29 @@
   function createOverlay() {
     const overlay = document.createElement("div");
     overlay.id = OVERLAY_ID;
+    overlay.setAttribute("data-truck-id", selectedTruck.id);
+    overlay.setAttribute(
+      "data-fuel-consumption-l-per-100-km",
+      String(selectedTruck.fuelConsumptionLitersPer100Km),
+    );
+    overlay.setAttribute(
+      "data-fuel-tank-capacity-liters",
+      String(selectedTruck.fuelTankCapacityLiters),
+    );
 
     overlay.appendChild(createHud());
-    overlay.appendChild(
-      createImage(
-        "dalnoboyshiki2-overlay__cabin",
-        "images/bottom-cabin@2x.png",
-      ),
+    const cabin = createImage(
+      "dalnoboyshiki2-overlay__cabin",
+      selectedTruck.cabinImage,
     );
+    cabin.id = "dalnoboyshiki2-cabin";
+    cabin.setAttribute("data-truck-id", selectedTruck.id);
+    overlay.appendChild(cabin);
     overlay.appendChild(createSpeedingNotice());
+    overlay.appendChild(createPager());
+    overlay.appendChild(createMinimapSlot());
+    overlay.appendChild(createRefuelButton());
+    overlay.appendChild(createGarage());
     overlay.appendChild(createMusicPlayer());
 
     return overlay;
@@ -724,10 +1382,13 @@
     }
 
     document.body.appendChild(createOverlay());
+    applySelectedTruck();
     applyHudState();
   }
 
   function removeOverlay() {
+    restoreGoogleStreetViewInfoCard();
+    restoreGoogleStreetViewMinimap();
     document.getElementById(OVERLAY_ID)?.remove();
     stopTelemetrySession();
   }
@@ -738,6 +1399,8 @@
 
     if (isStreetViewActive()) {
       ensureOverlay();
+      syncGoogleStreetViewInfoCard();
+      syncGoogleStreetViewMinimap();
     } else {
       removeOverlay();
     }
@@ -769,6 +1432,8 @@
 
     if (streetViewIsActive && overlayIsMounted) {
       updateTelemetry();
+      syncGoogleStreetViewInfoCard();
+      syncGoogleStreetViewMinimap();
     }
 
     if (locationChanged || overlayIsMounted !== streetViewIsActive) {
@@ -776,5 +1441,6 @@
     }
   }, LOCATION_CHECK_INTERVAL_MS);
 
+  restoreSelectedTruck();
   syncOverlay();
 })();
